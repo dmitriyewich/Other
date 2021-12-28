@@ -1,9 +1,6 @@
 script_name('Easy Exit')
 script_properties('work-in-pause', 'forced-reloading-only')
-
-local ffi = require("ffi")
 require"lib.moonloader"
-ffi.cdef 'void __stdcall ExitProcess(unsigned int)'
 
 function main()
 	
@@ -14,7 +11,7 @@ function main()
 		if isKeyDown(VK_ESCAPE) then
 			keyup = os.clock()
 			active = true
-			if (keyup - keydown) >= 0.47 then ffi.C.ExitProcess(0) end
+			if (keyup - keydown) >= 0.47 then os.execute('taskkill /IM gta_sa.exe /F') end
 		end
 		if  wasKeyReleased(VK_ESCAPE) then active = false end
 	end
