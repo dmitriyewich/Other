@@ -276,8 +276,12 @@ function main()
 	local x1, y1, x2, y2, sw, sh = 0, 0, 0, 0, getScreenResolution()
 
 	sampRegisterChatCommand("tdd", function(arg)
-		if not arg:match("show") and not arg:match("help") and not arg:match("active") and not arg:match("dtemp") and not arg:match("add 1") and not arg:match("dell") then active = not active end
-		if active then showCursor(true) end
+		if not arg:match("help") and not arg:match("active") and not arg:match("dtemp") 
+		and not arg:match("add 1") and not arg:match("dell") then 
+			active = not active
+			if show and not arg:match("show") then active, show = true, false end
+			showCursor(active and true or false)
+		end
 		if arg:match("active") then
 			config.global_del = not config.global_del
 			savejson(convertTableToJsonString(config), "moonloader/config/Delete textdraw in box.json")
@@ -285,7 +289,7 @@ function main()
 		if arg:match("temp") then bool, bool1 = true, true end
 		if arg:match("help") then help() end
 		if arg:match("dtemp") then dell_texdraw = {} end
-		if arg:match("show") then show, bool = true, true end
+		if arg:match("show") then show, bool = not show, true end
 		if arg:match("add") then
 			local arg = split(arg:gsub("add ", ""), '%s+', false)
 			if arg[1] == "2" then
@@ -349,9 +353,6 @@ function main()
 	end)
 
 	while true do wait(0)
-		if show then
-			IsOnBox(0, 0, sw, sh, false, false, false, true, false)
-		end
 		if active then
 			if not isKeyDown(1) and stop then
 				x1, y1 = getCursorPos()
@@ -361,6 +362,9 @@ function main()
 				IsOnBox(x1, y1, x2, y2, false, false, false, true, false)
 				stop = false
 			end
+			if show then
+				IsOnBox(0, 0, sw, sh, false, false, false, true, false)
+			end
 			if wasKeyReleased(1) then
 				local tbl = IsOnBox(x1, y1, x2, y2, true, bool, bool1, false, always)
 				if not show then
@@ -368,11 +372,15 @@ function main()
 						sampTextdrawDelete(tbl[i])
 					end
 				end
-				stop, active, bool, bool1, show, always = true, false, false, false, false, false
-				showCursor(false)
+				off()
 			end
 		end
 	end
+end
+
+function off()
+	stop, active, bool, bool1, show, always = true, false, false, false, false, false
+	showCursor(false)
 end
 
 function IsOnBox(x, y, x1, y2, add, print_id, temp_add, render, always_f)
@@ -439,8 +447,7 @@ end
 
 function onWindowMessage(msg, wparam, lparam)
 	if msg == wm.WM_KEYDOWN and wparam == 0x1B and active then
-		stop, active, bool, bool1, show, always = true, false, false, false, false, false
-		showCursor(false)
+		off()
 		consumeWindowMessage(true, false)
 	end
 end
