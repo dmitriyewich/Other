@@ -277,7 +277,7 @@ function main()
 
 	sampRegisterChatCommand("tdd", function(arg)
 		if not arg:match("help") and not arg:match("active") and not arg:match("dtemp") 
-		and not arg:match("add 1") and not arg:match("dell") then 
+		and not arg:match("add 2") and not arg:match("dell") then 
 			active = not active
 			if show and not arg:match("show") then active, show = true, false end
 			showCursor(active and true or false)
