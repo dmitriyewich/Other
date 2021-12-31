@@ -276,7 +276,7 @@ function main()
 	local x1, y1, x2, y2, sw, sh = 0, 0, 0, 0, getScreenResolution()
 
 	sampRegisterChatCommand("tdd", function(arg)
-		if not arg:match("help") and not arg:match("active") and not arg:match("dtemp") and not arg:match("add 1") and not arg:match("dell") then active = not active end
+		if not arg:match("show") and not arg:match("help") and not arg:match("active") and not arg:match("dtemp") and not arg:match("add 1") and not arg:match("dell") then active = not active end
 		if active then showCursor(true) end
 		if arg:match("active") then
 			config.global_del = not config.global_del
@@ -349,6 +349,9 @@ function main()
 	end)
 
 	while true do wait(0)
+		if show then
+			IsOnBox(0, 0, sw, sh, false, false, false, true, false)
+		end
 		if active then
 			if not isKeyDown(1) and stop then
 				x1, y1 = getCursorPos()
@@ -357,9 +360,6 @@ function main()
 				renderDrawBoxWithBorder(x1, y1, x2-x1, y2-y1, 0x78e5e5e5, 2.74, 0xe5e5e5e5)
 				IsOnBox(x1, y1, x2, y2, false, false, false, true, false)
 				stop = false
-			end
-			if show then
-				IsOnBox(0, 0, sw, sh, false, false, false, true, false)
 			end
 			if wasKeyReleased(1) then
 				local tbl = IsOnBox(x1, y1, x2, y2, true, bool, bool1, false, always)
