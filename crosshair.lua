@@ -15,16 +15,14 @@ function main()
 
 	while true do wait(0)
 		local targetting, target_car = (memory.getint8(getCharPointer(playerPed) + 0x528, false) == 19), (memory.getint8(0xB6FC70) == 1)
-		if targetting or target_car then
-            if sx >= 0 and sy >= 0 and sx < sw and sy < sh then
-                local pos, cam = {convertScreenCoordsToWorld3D(sx, sy, 700.0)}, {getActiveCameraCoordinates()}
-                local result, colpoint = processLineOfSight(cam[1], cam[2], cam[3], pos[1], pos[2], pos[3], true, true, true, true, true, true, true, true)
-				if result and (colpoint.entityType == 2 or colpoint.entityType == 3) and getCharPointerHandle(colpoint.entity) ~= PLAYER_PED then
-					changeCrosshairColor("0xFF3300FF")
-				else
-					changeCrosshairColor("0xFFFFFFFF")
-				end
-            end
+		if (targetting or target_car) and sx >= 0 and sy >= 0 and sx < sw and sy < sh then
+			local pos, cam = {convertScreenCoordsToWorld3D(sx, sy, 700.0)}, {getActiveCameraCoordinates()}
+			local result, colpoint = processLineOfSight(cam[1], cam[2], cam[3], pos[1], pos[2], pos[3], false, true, true, false, false, false, false, false)
+			if result and (colpoint.entityType == 2 or colpoint.entityType == 3) and getCharPointerHandle(colpoint.entity) ~= PLAYER_PED then
+				changeCrosshairColor("0xFF3300FF")
+			else
+				changeCrosshairColor("0xFFFFFFFF")
+			end
 		end
 	end
 end
@@ -34,10 +32,10 @@ function fixed_camera_to_skin() -- проверка на приклеплени�
 end
 
 function getCrosshairPosition()
-	local chOff1 = memory.getfloat(0xB6EC10)
-	local chOff2 = memory.getfloat(0xB6EC14)
-	local szx, szy = getScreenResolution()
-	return szx * chOff2, szy * chOff1
+	local sw, sh = getScreenResolution()
+	local w = memory.getfloat(0xB6EC14) * sw
+	local h = memory.getfloat(0xB6EC10) * sh
+	return w, h
 end
 
 function changeCrosshairColor(rgba)
