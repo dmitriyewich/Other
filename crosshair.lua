@@ -1,6 +1,5 @@
 script_name('crosshair')
 require("lib.moonloader")
-local lffi, ffi = pcall(require, 'ffi')
 local lmemory, memory = pcall(require, 'memory')
 script_properties('work-in-pause', 'forced-reloading-only')
 script_version("1.1")
