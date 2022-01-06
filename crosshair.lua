@@ -2,7 +2,7 @@ script_name('crosshair')
 require("lib.moonloader")
 local lmemory, memory = pcall(require, 'memory')
 script_properties('work-in-pause', 'forced-reloading-only')
-script_version("1.1")
+script_version("1.11")
 
 function main()
 	repeat wait(0) until memory.read(0xC8D4C0, 4, false) == 9
@@ -14,14 +14,12 @@ function main()
 	local sw, sh = getScreenResolution()
 
 	while true do wait(0)
-		local targetting = memory.getint8(getCharPointer(playerPed) + 0x528, false) == 19
-		local target_car = memory.getint8(0xB6FC70) == 1
+		local targetting, target_car = (memory.getint8(getCharPointer(playerPed) + 0x528, false) == 19), (memory.getint8(0xB6FC70) == 1)
 		if targetting or target_car then
             if sx >= 0 and sy >= 0 and sx < sw and sy < sh then
-                local posX, posY, posZ = convertScreenCoordsToWorld3D(sx, sy, 700.0)
-                local camX, camY, camZ = getActiveCameraCoordinates()
-                local result, colpoint = processLineOfSight(camX, camY, camZ, posX, posY, posZ, true, true, true, true, true, true, true, true)
-				if result and (colpoint.entityType == 2 or colpoint.entityType == 3) then
+                local pos, cam = {convertScreenCoordsToWorld3D(sx, sy, 700.0)}, {getActiveCameraCoordinates()}
+                local result, colpoint = processLineOfSight(cam[1], cam[2], cam[3], pos[1], pos[2], pos[3], true, true, true, true, true, true, true, true)
+				if result and (colpoint.entityType == 2 or colpoint.entityType == 3) and getCharPointerHandle(colpoint.entity) ~= PLAYER_PED then
 					changeCrosshairColor("0xFF3300FF")
 				else
 					changeCrosshairColor("0xFFFFFFFF")
