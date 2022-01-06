@@ -2,8 +2,6 @@ script_name('crosshair')
 require("lib.moonloader")
 local lffi, ffi = pcall(require, 'ffi')
 local lmemory, memory = pcall(require, 'memory')
-local lse, se = pcall(require, 'lib.samp.events')
-
 
 function main()
 	repeat wait(0) until memory.read(0xC8D4C0, 4, false) == 9
