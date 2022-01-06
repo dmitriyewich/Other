@@ -2,16 +2,18 @@ script_name('crosshair')
 require("lib.moonloader")
 local lffi, ffi = pcall(require, 'ffi')
 local lmemory, memory = pcall(require, 'memory')
+script_properties('work-in-pause', 'forced-reloading-only')
+script_version("1.1")
 
 function main()
 	repeat wait(0) until memory.read(0xC8D4C0, 4, false) == 9
 	repeat wait(0) until fixed_camera_to_skin()
 
 	memory.write(0x058E280, 0xEB, 1, true) -- белая точка
-	
-	local sx, sy = convert3DCoordsToScreen(get_crosshair_position())
+
+	local sx, sy = getCrosshairPosition()
 	local sw, sh = getScreenResolution()
-	
+
 	while true do wait(0)
 		local targetting = memory.getint8(getCharPointer(playerPed) + 0x528, false) == 19
 		local target_car = memory.getint8(0xB6FC70) == 1
@@ -34,11 +36,11 @@ function fixed_camera_to_skin() -- проверка на приклеплени�
 	return (memory.read(getModuleHandle('gta_sa.exe') + 0x76F053, 1, false) >= 1 and true or false)
 end
 
-function get_crosshair_position()
-	local vec_out = ffi.new('float[3]')
-	local tmp_vec = ffi.new('float[3]')
-	ffi.cast('void (__thiscall*)(void*, float, float, float, float, float*, float*)', 0x514970)(ffi.cast('void*', 0xB6F028), 15.0, tmp_vec[0], tmp_vec[1], tmp_vec[2], tmp_vec, vec_out)
-	return vec_out[0], vec_out[1], vec_out[2]
+function getCrosshairPosition()
+	local chOff1 = memory.getfloat(0xB6EC10)
+	local chOff2 = memory.getfloat(0xB6EC14)
+	local szx, szy = getScreenResolution()
+	return szx * chOff2, szy * chOff1
 end
 
 function changeCrosshairColor(rgba)
