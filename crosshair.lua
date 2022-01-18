@@ -2,7 +2,7 @@ script_name('crosshair')
 require("lib.moonloader")
 local lmemory, memory = pcall(require, 'memory')
 script_properties('work-in-pause', 'forced-reloading-only')
-script_version("1.11")
+script_version("1.12")
 
 function main()
 	repeat wait(0) until memory.read(0xC8D4C0, 4, false) == 9
@@ -10,12 +10,13 @@ function main()
 
 	memory.write(0x058E280, 0xEB, 1, true) -- белая точка
 
-	local sx, sy = getCrosshairPosition()
 	local sw, sh = getScreenResolution()
+	local sx, sy = memory.getfloat(0xB6EC14) * sw, memory.getfloat(0xB6EC10) * sh
 
 	while true do wait(0)
-		local targetting, target_car = (memory.getint8(getCharPointer(playerPed) + 0x528, false) == 19), (memory.getint8(0xB6FC70) == 1)
-		if (targetting or target_car) and sx >= 0 and sy >= 0 and sx < sw and sy < sh then
+		-- local targetting, target_car = (memory.getint8(getCharPointer(playerPed) + 0x528, false) == 19), (memory.getint8(0xB6FC70) == 1)
+		local test = memory.getint16((0xB6F19C + memory.getint8(0xB6F028 + 0x59) * 0x238) + 0x0C) ~= 4
+		if (--[[targetting or target_car or]] test) and sx >= 0 and sy >= 0 and sx < sw and sy < sh then
 			local pos, cam = {convertScreenCoordsToWorld3D(sx, sy, 700.0)}, {getActiveCameraCoordinates()}
 			local result, colpoint = processLineOfSight(cam[1], cam[2], cam[3], pos[1], pos[2], pos[3], false, true, true, false, false, false, false, false)
 			if result and (colpoint.entityType == 2 or colpoint.entityType == 3) and getCharPointerHandle(colpoint.entity) ~= PLAYER_PED then
@@ -29,13 +30,6 @@ end
 
 function fixed_camera_to_skin() -- проверка на приклепление камеры к скину
 	return (memory.read(getModuleHandle('gta_sa.exe') + 0x76F053, 1, false) >= 1 and true or false)
-end
-
-function getCrosshairPosition()
-	local sw, sh = getScreenResolution()
-	local w = memory.getfloat(0xB6EC14) * sw
-	local h = memory.getfloat(0xB6EC10) * sh
-	return w, h
 end
 
 function changeCrosshairColor(rgba)
