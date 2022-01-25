@@ -1,6 +1,6 @@
 script_name('crosshair')
 local lmemory, memory = pcall(require, 'memory')
-script_version("1.14")
+script_version("1.15")
 
 function main()
 	repeat wait(0) until memory.read(0xC8D4C0, 4, false) == 9
@@ -16,8 +16,8 @@ function main()
 		local test = memory.getint16((0xB6F19C + memory.getint8(0xB6F028 + 0x59) * 0x238) + 0x0C) ~= 4
 		if (--[[targetting or target_car or]] test) and sx >= 0 and sy >= 0 and sx < sw and sy < sh then
 			local pos, cam = {convertScreenCoordsToWorld3D(sx, sy, 700.0)}, {getActiveCameraCoordinates()}
-			local result, colpoint = processLineOfSight(cam[1], cam[2], cam[3], pos[1], pos[2], pos[3], true, true, true, true, false, false, false, false)
-			if result and (colpoint.entityType == 2 or colpoint.entityType == 3) and getCharPointerHandle(colpoint.entity) ~= PLAYER_PED then
+			local res, c = processLineOfSight(cam[1], cam[2], cam[3], pos[1], pos[2], pos[3], true, true, true, true, false, false, false, false)
+			if res and (c.entityType == 2 or c.entityType == 3) and getCharPointerHandle(c.entity) ~= PLAYER_PED then
 				changeCrosshairColor("0xFF3300FF")
 			else
 				changeCrosshairColor("0xFFFFFFFF")
@@ -39,4 +39,8 @@ function changeCrosshairColor(rgba)
 		memory.setuint8(tbl[i], clr[k], true)
 		if i % 4 == 0 then k = k + 1 end
 	end
+end
+
+function onScriptTerminate(s, q)
+    if s == thisScript() then thisScript():reload()	end --temp fix crash script processLineOfSight
 end
