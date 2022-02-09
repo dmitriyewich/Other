@@ -3,7 +3,7 @@ script_author("dmitriyewich")
 script_url("https://vk.com/dmitriyewichmods")
 script_properties('work-in-pause', 'forced-reloading-only')
 script_dependencies("ffi", "memory", "SAMPFUNCS")
-script_version("0.1")
+script_version("0.11")
 
 local lffi, ffi = pcall(require, 'ffi')
 local lmemory, memory = pcall(require, 'memory')
@@ -16,7 +16,8 @@ function main()
 		if result then
 			local res, id = sampGetPlayerIdByCharHandle(ped)
 			if res then
-				tbl = sampGetPlayerHealth(id) >= 50 and test((sampGetPlayerHealth(id) >= 101 and sampGetPlayerHealth(id) or 100), sampGetPlayerHealth(id), 255, 255, 0, 25, 255, 25) or (sampGetPlayerHealth(3) <= 10 and test(10, sampGetPlayerHealth(id), 0, 0, 0, 255, 0, 0) or test(50, sampGetPlayerHealth(id), 255, 0, 0, 255, 255, 0))
+				local hp = sampGetPlayerHealth(id)
+				local tbl = hp >= 50 and test((hp >= 101 and hp or 50), hp, 255, 255, 0, 25, 255, 25) or (hp <= 10 and test(10, hp, 0, 0, 0, 255, 0, 0) or test(50, hp, 255, 0, 0, 255, 255, 0))
 				set_triangle_color(tbl[1], tbl[2], tbl[3])
 			end
 		else
