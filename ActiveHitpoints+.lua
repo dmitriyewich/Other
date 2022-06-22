@@ -21,7 +21,6 @@ function main()
 			local res, id = getPedID(ped)
 			if res then
 				local hp, arm = GetHealthAndArmour(id)
-				print(hp, arm)
 				local tbl = hp >= 50 and test((hp >= 101 and hp or 50), hp, 255, 255, 0, 25, 255, 25) or (hp <= 10 and test(10, hp, 0, 0, 0, 255, 0, 0) or test(50, hp, 255, 0, 0, 255, 255, 0))
 				set_triangle_color(tbl[1], tbl[2], tbl[3])
 			end
