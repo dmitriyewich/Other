@@ -10,11 +10,11 @@ local lmemory, memory = pcall(require, 'memory')
 function main()
 	repeat wait(0) until memory.read(0xC8D4C0, 4, false) == 9
 	repeat wait(0) until fixed_camera_to_skin()
-	
+
 	samp_v = samp_ver()
-	
+
 	pedpool = memory.getint32(memory.getint32(memory.getint32(samp_handle() + (samp_v == 'R1' and 0x21A0F8 or 0x26E8DC), false) + (samp_v == 'R1' and 0x3CD or 0x3DE), false) + (samp_v == 'R1' and 0x18 or 0x8), false)
-	
+
     while true do wait(0)
 		local result, ped = getCharPlayerIsTargeting(PLAYER_HANDLE)
 		if result then
@@ -52,7 +52,7 @@ function GetHealthAndArmour(id)
 		local dwRemoteplayer = memory.getint32(pedpool + (samp_v == 'R1' and 0x2E or 0x4) + id * 4)
 		local dwRemoteplayerData = memory.getuint32(dwRemoteplayer + 0x0)
 		fHP = memory.getfloat(dwRemoteplayerData + (samp_v == 'R1' and 444 or 432))
-		fARM = memory.getfloat(dwRemoteplayerData + (samp_v == 'R1' and 440 or 428)) 
+		fARM = memory.getfloat(dwRemoteplayerData + (samp_v == 'R1' and 440 or 428))
 	else
 		fHP = memory.getfloat(memory.getuint32(0xB6F5F0) + 0x540)
 		fARM = memory.getfloat(memory.getuint32(0xB6F5F0) + 0x548)
@@ -61,23 +61,24 @@ function GetHealthAndArmour(id)
 end
 
 function getPedID(handle)
-	if handle == PLAYER_PED then 
-			return memory.getint16(pedpool + (samp_v == 'R1' and 0x4 or 0x2F1C))
+	local dwRemoteplayer, dw_remoteplayer_data, dw_samp_actor, dw_ped
+	if handle == PLAYER_PED then
+		return memory.getint16(pedpool + (samp_v == 'R1' and 0x4 or 0x2F1C))
 	end
 	for i = 1, 1004 do
-		local dwRemoteplayer = memory.getint32(pedpool + (samp_v == 'R1' and 0x2E or 0x4) + i * 4)
+		dwRemoteplayer = memory.getint32(pedpool + (samp_v == 'R1' and 0x2E or 0x4) + i * 4)
 		if dwRemoteplayer <= 1 then goto continue end
-			local dw_remoteplayer_data = memory.getuint32(dwRemoteplayer + 0x0 )
-			::continue::
+			dw_remoteplayer_data = memory.getuint32(dwRemoteplayer + 0x0 )
+		::continue::
 		if dw_remoteplayer_data == 0 then goto continue2 end
-			local dw_samp_actor = memory.getuint32(dw_remoteplayer_data + 0x0 )
-			::continue2::
+			dw_samp_actor = memory.getuint32(dw_remoteplayer_data + 0x0 )
+		::continue2::
 		if dw_samp_actor == 0 then goto continue3 end
-			local dw_ped = memory.getuint32(dw_samp_actor + 0x2A4 )
+			dw_ped = memory.getuint32(dw_samp_actor + 0x2A4 )
 			if getCharPointerHandle(dw_ped) == handle then
 				return true, i
 			end
-			::continue3::	
+		::continue3::
 	end
 	return false, -1
 end
