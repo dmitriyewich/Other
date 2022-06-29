@@ -2,7 +2,6 @@ script_name('crosshair')
 script_version("1.2")
 
 local lmad, mad = pcall(require, 'MoonAdditions')
-assert(lmad, 'Library \'MoonAdditions\' not found. Download: https://github.com/THE-FYP/MoonAdditions')
 local lmemory, memory = pcall(require, 'memory')
 
 function main()
