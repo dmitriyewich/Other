@@ -1,5 +1,5 @@
 script_name('crosshair')
-script_version("1.2")
+script_version("1.21")
 
 local lmad, mad = pcall(require, 'MoonAdditions')
 local lmemory, memory = pcall(require, 'memory')
@@ -14,15 +14,20 @@ function main()
 
 	local sw, sh = getScreenResolution()
 	local sx, sy = memory.getfloat(0xB6EC14, true) * sw, memory.getfloat(0xB6EC10, true) * sh
+	local flags = {buildings = true, vehicles = true, peds = true, objects = true, dummies = true, seeThroughCheck = true, ignoreSomeObjectsCheck = true, shootThroughCheck = true}
 
 	while true do wait(0)
-		-- local targetting, target_car = (memory.getint8(getCharPointer(playerPed) + 0x528, false) == 19), (memory.getint8(0xB6FC70) == 1)
-		local test = memory.getint16((0xB6F19C + memory.getint8(0xB6F028 + 0x59, true) * 0x238) + 0x0C, true) ~= 4
-		if (--[[targetting or target_car or]] test) and sx >= 0 and sy >= 0 and sx < sw and sy < sh then
+		local test = memory.getint16((0xB6F19C + memory.getint8(0xB6F028 + 0x59, true) * 0x238) + 0x0C, true)
+		local test = test ~= 4 and test ~= 18
+		if test and sx >= 0 and sy >= 0 and sx < sw and sy < sh then
 			local pos, cam = {convertScreenCoordsToWorld3D(sx, sy, 700.0)}, {getActiveCameraCoordinates()}
 			if lmad then
-				local c = mad.get_collision_between_points(cam[1], cam[2], cam[3], pos[1], pos[2], pos[3], {buildings = false,vehicles = true, peds = true, objects = false, dummies = false, seeThroughCheck = false, ignoreSomeObjectsCheck = false, shootThroughCheck = false})	 --  [table<string=bool> flags, uint ignore_entity_ptr]
-				changeCrosshairColor((c ~= nil and getCharPointerHandle(c.entity) ~= PLAYER_PED and storeCarCharIsInNoSave(PLAYER_PED) ~= getVehiclePointerHandle(c.entity)) and "0xFF3300FF" or "0xFFFFFFFF")
+				local c = mad.get_collision_between_points(cam[1], cam[2], cam[3], pos[1], pos[2], pos[3], flags, isCharInAnyCar(PLAYER_PED) and getCarPointer(storeCarCharIsInNoSave(PLAYER_PED)) or getCharPointer(PLAYER_PED))
+				local entityType
+				if c ~= nil then
+					entityType, _ = mad.get_entity_type_and_class(c.entity)
+				end
+				changeCrosshairColor(c ~= nil and (entityType == 2 or entityType == 3) and "0xFF3300FF" or "0xFFFFFFFF")
 			else
 				local res, c = processLineOfSight(cam[1], cam[2], cam[3], pos[1], pos[2], pos[3], true, true, true, true, false, false, false, false)
 				changeCrosshairColor((res and (c.entityType == 2 or c.entityType == 3) and getCharPointerHandle(c.entity) ~= PLAYER_PED and storeCarCharIsInNoSave(PLAYER_PED) ~= getVehiclePointerHandle(c.entity)) and "0xFF3300FF" or "0xFFFFFFFF")
@@ -37,7 +42,6 @@ end
 
 function changeCrosshairColor(rgba) -- by Hertanion, minimal edit dmitriyewich
     local r, g, b, a = bit.band(bit.rshift(rgba, 24), 0xFF), bit.band(bit.rshift(rgba, 16), 0xFF), bit.band(bit.rshift(rgba, 8), 0xFF), bit.band(rgba, 0xFF)
-
 	local tbl, clr, k = {0x58E301, 0x58E3DA, 0x58E433, 0x58E47C, 0x58E2F6, 0x58E3D1, 0x58E42A, 0x58E473, 0x58E2F1, 0x58E3C8, 0x58E425, 0x58E466, 0x58E2EC, 0x58E3BF, 0x58E420, 0x58E461}, {r, g, b, a}, 1
 
 	for i = 1, #tbl do
