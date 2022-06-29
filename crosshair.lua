@@ -26,7 +26,7 @@ function main()
 				changeCrosshairColor((c ~= nil and getCharPointerHandle(c.entity) ~= PLAYER_PED and storeCarCharIsInNoSave(PLAYER_PED) ~= getVehiclePointerHandle(c.entity)) and "0xFF3300FF" or "0xFFFFFFFF")
 			else
 				local res, c = processLineOfSight(cam[1], cam[2], cam[3], pos[1], pos[2], pos[3], true, true, true, true, false, false, false, false)
-				changeCrosshairColor((res and (c.entityType == 2 or c.entityType == 3) and getCharPointerHandle(c.entity) ~= PLAYER_PED) and "0xFF3300FF" or "0xFFFFFFFF")
+				changeCrosshairColor((res and (c.entityType == 2 or c.entityType == 3) and getCharPointerHandle(c.entity) ~= PLAYER_PED and storeCarCharIsInNoSave(PLAYER_PED) ~= getVehiclePointerHandle(c.entity)) and "0xFF3300FF" or "0xFFFFFFFF")
 			end
 		end
 	end
@@ -36,7 +36,7 @@ function fixed_camera_to_skin() -- проверка на приклеплени�
 	return (memory.read(getModuleHandle('gta_sa.exe') + 0x76F053, 1, true) >= 1 and true or false)
 end
 
-function changeCrosshairColor(rgba)
+function changeCrosshairColor(rgba) -- by Hertanion, minimal edit dmitriyewich
     local r, g, b, a = bit.band(bit.rshift(rgba, 24), 0xFF), bit.band(bit.rshift(rgba, 16), 0xFF), bit.band(bit.rshift(rgba, 8), 0xFF), bit.band(rgba, 0xFF)
 
 	local tbl, clr, k = {0x58E301, 0x58E3DA, 0x58E433, 0x58E47C, 0x58E2F6, 0x58E3D1, 0x58E42A, 0x58E473, 0x58E2F1, 0x58E3C8, 0x58E425, 0x58E466, 0x58E2EC, 0x58E3BF, 0x58E420, 0x58E461}, {r, g, b, a}, 1
