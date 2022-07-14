@@ -21,7 +21,6 @@ function main()
 			local res, id = getPedID(ped)
 			if res then
 				local hp, arm = GetHealthAndArmour(id)
-				print(hp, arm)
 				local tbl = hp >= 50 and test((hp >= 101 and hp or 50), hp, 255, 255, 0, 25, 255, 25) or (hp <= 10 and test(10, hp, 0, 0, 0, 255, 0, 0) or test(50, hp, 255, 0, 0, 255, 255, 0))
 				set_triangle_color(tbl[1], tbl[2], tbl[3])
 			end
@@ -62,23 +61,24 @@ function GetHealthAndArmour(id)
 end
 
 function getPedID(handle)
+	local dwRemoteplayer, dw_remoteplayer_data, dw_samp_actor, dw_ped
 	if handle == PLAYER_PED then
-			return true, memory.getint16(pedpool + (samp_v == 'R1' and 0x4 or 0x2F1C))
+		return memory.getint16(pedpool + (samp_v == 'R1' and 0x4 or 0x2F1C))
 	end
 	for i = 1, 1004 do
-		local dwRemoteplayer = memory.getint32(pedpool + (samp_v == 'R1' and 0x2E or 0x4) + i * 4)
+		dwRemoteplayer = memory.getint32(pedpool + (samp_v == 'R1' and 0x2E or 0x4) + i * 4)
 		if dwRemoteplayer <= 1 then goto continue end
-			local dw_remoteplayer_data = memory.getuint32(dwRemoteplayer + 0x0 )
-			::continue::
+			dw_remoteplayer_data = memory.getuint32(dwRemoteplayer + 0x0 )
+		::continue::
 		if dw_remoteplayer_data == 0 then goto continue2 end
-			local dw_samp_actor = memory.getuint32(dw_remoteplayer_data + 0x0 )
-			::continue2::
+			dw_samp_actor = memory.getuint32(dw_remoteplayer_data + 0x0 )
+		::continue2::
 		if dw_samp_actor == 0 then goto continue3 end
-			local dw_ped = memory.getuint32(dw_samp_actor + 0x2A4 )
+			dw_ped = memory.getuint32(dw_samp_actor + 0x2A4 )
 			if getCharPointerHandle(dw_ped) == handle then
 				return true, i
 			end
-			::continue3::
+		::continue3::
 	end
 	return false, -1
 end
