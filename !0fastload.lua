@@ -18,7 +18,7 @@ if memory.getuint32(0xC8D4C0, true) < 9 then
 
 	memory.setuint32(0xC8D4C0, 5, true) -- Skip ads
 
-	memory.fill(0x561AF0, 0x90, 7, true) -- antipause
+	-- memory.fill(0x561AF0, 0x90, 7, true) -- antipause
 
 	if memory.getuint8(0x748C2B) == 0xE8 then -- Legal info fade-in
 		memory.fill(0x748C2B, 0x90, 5, true)
@@ -52,6 +52,7 @@ if memory.getuint32(0xC8D4C0, true) < 9 then
 	memory.fill(0x590AC0, 0xC3, 1, true) -- Disable Loading Screen Patch
 	memory.fill(0x590D9F, "C390909090", 5, true) -- Disable Loading Screen Patch
 
+	memory.fill(0x748CBD, 0x90, 2, true) -- Let FrontentIdle run even when minimized
 	-- if memory.getuint8(0x748C6B) == 0xC6 then -- Show load game
 		-- memory.fill(0x748C6B, 0x90, 7, true)
 	-- elseif memory.getuint8(0x748CBB) == 0xC6 then
