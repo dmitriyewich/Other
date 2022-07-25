@@ -2,7 +2,6 @@ script_name("ActiveHitpoints+")
 script_author("dmitriyewich")
 script_url("https://vk.com/dmitriyewichmods")
 script_properties('work-in-pause', 'forced-reloading-only')
-script_dependencies("memory")
 script_version("1.5")
 
 local lmemory, memory = pcall(require, 'memory')
@@ -13,6 +12,7 @@ local main_offsets = {
 	['SAMP_INFO_OFFSET_Pools'] = {['R1'] = 0x3CD, ['R2'] = 0x3C5, ['R3-1'] = 0x3DE, ['R4'] = 0x3DE, ['R4-2'] = 0x3DE, ['DL-R1'] = 0x3DE},
 	['SAMP_INFO_OFFSET_Pools_Player'] = {['R1'] = 0x18, ['R2'] = 0x8, ['R3-1'] = 0x8, ['R4'] = 0x8, ['R4-2'] = 0x4, ['DL-R1'] = 0x8},
 	['SAMP_SLOCALPLAYERID_OFFSET'] = {['R1'] = 0x4, ['R2'] = 0x0, ['R3-1'] = 0x2F1C, ['R4'] = 0xC, ['R4-2'] = 0x4, ['DL-R1'] = 0x0},
+	['MAX_PLAYER_ID_STREAMED_ONLY_OFFSET'] = {['R1'] = 0xFB0, ['R2'] = 0x22, ['R3-1'] = 0x0, ['R4'] = 0x0, ['R4-2'] = 0x2F3A, ['DL-R1'] = 0x22},
 	['SAMP_PREMOTEPLAYER_OFFSET'] = {['R1'] = 0x2E, ['R2'] = 0x26, ['R3-1'] = 0x4, ['R4'] = 0x2E, ['R4-2'] = 0x1F8A, ['DL-R1'] = 0x26},
 	['SAMP_REMOTEPLAYERDATA_OFFSET'] = {['R1'] = 0x0, ['R2'] = 0xC, ['R3-1'] = 0x0, ['R4'] = 0x10, ['R4-2'] = 0x10, ['DL-R1'] = 0x8},
 	['SAMP_REMOTEPLAYERDATA_ACTOR'] = {['R1'] = 0x0, ['R2'] = 0x1C, ['R3-1'] = 0x0, ['R4'] = 0x1DD, ['R4-2'] = 0x1DD, ['DL-R1'] = 0x4},
@@ -28,7 +28,6 @@ function main()
 	if currentVersion == 'UNKNOWN' or currentVersion == 'R3' then print('Samp version '.. currentVersion .. ' is not supported'); thisScript():unload() end
 	repeat wait(100) until isSAMPInitilizeLua()
 	repeat wait(100) until fixed_camera_to_skin()
-
     while true do wait(0)
 		local result, ped = getCharPlayerIsTargeting(PLAYER_HANDLE)
 		if result then
@@ -96,24 +95,23 @@ function GetHealthAndArmour(id)
 end
 
 function getPedID(handle)
-	local dwRemoteplayer, dw_remoteplayer_data, dw_samp_actor, dw_ped
-	if handle == PLAYER_PED then
-		return Local_ID()
-	end
-	for i = 1, 1004 do
-		dwRemoteplayer = memory.getint32(PedPool() + main_offsets.SAMP_PREMOTEPLAYER_OFFSET[currentVersion] + i * 4, true)
-		if dwRemoteplayer <= 1 then goto continue end
-			dw_remoteplayer_data = memory.getuint32(dwRemoteplayer + main_offsets.SAMP_REMOTEPLAYERDATA_OFFSET[currentVersion], true)
-		::continue::
-		if dw_remoteplayer_data == 0 then goto continue2 end
-			dw_samp_actor = memory.getuint32(dw_remoteplayer_data + main_offsets.SAMP_REMOTEPLAYERDATA_ACTOR[currentVersion], true)
-		::continue2::
-		if dw_samp_actor == 0 then goto continue3 end
-			dw_ped = memory.getuint32(dw_samp_actor + main_offsets.GTA_PED_HANDLE[currentVersion], true)
-			if dw_ped == handle then
-				return true, i
+	local REMOTE_PLAYER, PLAYER_DATA, SAMP_ACTOR, GTA_PED_HANDLE
+	if handle == PLAYER_PED then return true, Local_ID() end
+	local MAX_PLAYER_ID = memory.getint32(PedPool() + main_offsets.MAX_PLAYER_ID_STREAMED_ONLY_OFFSET[currentVersion], true)
+	for i = 1, MAX_PLAYER_ID do
+		REMOTE_PLAYER = memory.getint32(PedPool() + main_offsets.SAMP_PREMOTEPLAYER_OFFSET[currentVersion] + i * 4, true)
+		if REMOTE_PLAYER > 0 then
+			PLAYER_DATA = memory.getuint32(REMOTE_PLAYER + main_offsets.SAMP_REMOTEPLAYERDATA_OFFSET[currentVersion], true)
+			if PLAYER_DATA > 0 then
+				SAMP_ACTOR = memory.getuint32(PLAYER_DATA + main_offsets.SAMP_REMOTEPLAYERDATA_ACTOR[currentVersion], true)
+				if SAMP_ACTOR > 0 then
+					GTA_PED_HANDLE = memory.getuint32(SAMP_ACTOR + main_offsets.GTA_PED_HANDLE[currentVersion], true)
+					if GTA_PED_HANDLE == handle then
+						return true, i
+					end
+				end
 			end
-		::continue3::
+		end
 	end
 	return false, -1
 end
