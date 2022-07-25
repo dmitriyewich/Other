@@ -12,7 +12,7 @@ local main_offsets = {
 	['SAMP_INFO_OFFSET_Pools'] = {['R1'] = 0x3CD, ['R2'] = 0x3C5, ['R3-1'] = 0x3DE, ['R4'] = 0x3DE, ['R4-2'] = 0x3DE, ['DL-R1'] = 0x3DE},
 	['SAMP_INFO_OFFSET_Pools_Player'] = {['R1'] = 0x18, ['R2'] = 0x8, ['R3-1'] = 0x8, ['R4'] = 0x8, ['R4-2'] = 0x4, ['DL-R1'] = 0x8},
 	['SAMP_SLOCALPLAYERID_OFFSET'] = {['R1'] = 0x4, ['R2'] = 0x0, ['R3-1'] = 0x2F1C, ['R4'] = 0xC, ['R4-2'] = 0x4, ['DL-R1'] = 0x0},
-	['MAX_PLAYER_ID_STREAMED_ONLY_OFFSET'] = {['R1'] = 0xFB0, ['R2'] = 0x22, ['R3-1'] = 0x0, ['R4'] = 0x0, ['R4-2'] = 0x2F3A, ['DL-R1'] = 0x22},
+	['MAX_PLAYER_ID_STREAMED_ONLY_OFFSET'] = {['R1'] = 0x0, ['R2'] = 0x22, ['R3-1'] = 0x0, ['R4'] = 0x0, ['R4-2'] = 0x2F3A, ['DL-R1'] = 0x22},
 	['SAMP_PREMOTEPLAYER_OFFSET'] = {['R1'] = 0x2E, ['R2'] = 0x26, ['R3-1'] = 0x4, ['R4'] = 0x2E, ['R4-2'] = 0x1F8A, ['DL-R1'] = 0x26},
 	['SAMP_REMOTEPLAYERDATA_OFFSET'] = {['R1'] = 0x0, ['R2'] = 0xC, ['R3-1'] = 0x0, ['R4'] = 0x10, ['R4-2'] = 0x10, ['DL-R1'] = 0x8},
 	['SAMP_REMOTEPLAYERDATA_ACTOR'] = {['R1'] = 0x0, ['R2'] = 0x1C, ['R3-1'] = 0x0, ['R4'] = 0x1DD, ['R4-2'] = 0x1DD, ['DL-R1'] = 0x4},
