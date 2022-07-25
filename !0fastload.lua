@@ -3,13 +3,10 @@ script_properties('work-in-pause', 'forced-reloading-only')
 local lmemory, memory = pcall(require, 'memory')
 
 if memory.getuint32(0xC8D4C0, true) < 9 then
-
-	memory.setint8(0x442AD0, 0xC3, true) -- DISABLE CGameLogic::Update
-
 	memory.setuint32(0xC8D4C0, 5, true) -- gGameState to 6
 
 	memory.fill(0x747483, 0x90, 6, true) -- Initialize game state US 1.0
-
+	
 	memory.fill(0x748AA8, 0x90, 6, true)
 	memory.fill(0x748AA8, "C705C0D4C80005000000", 10, true)
 	memory.fill(0x748C23, 0x90, 5, true)
