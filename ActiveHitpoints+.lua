@@ -3,17 +3,31 @@ script_author("dmitriyewich")
 script_url("https://vk.com/dmitriyewichmods")
 script_properties('work-in-pause', 'forced-reloading-only')
 script_dependencies("memory")
-script_version("1.0")
+script_version("1.5")
 
 local lmemory, memory = pcall(require, 'memory')
 
+local entryPoint = {[0x31DF13] = 'R1', [0x3195DD] = 'R2', [0xCC490] = 'R3', [0xCC4D0] = 'R3-1', [0xCBCB0] = 'R4', [0xcbcd0] = 'R4-2', [0xFDB60] = 'DL-R1'}
+local main_offsets = {
+	['SAMP_INFO_OFFSET'] = {['R1'] = 0x21A0F8, ['R2'] = 0x21A100, ['R3-1'] = 0x26E8DC, ['R4'] = 0x26EA0C, ['R4-2'] = 0x26EA0C, ['DL-R1'] = 0x2ACA24},
+	['SAMP_INFO_OFFSET_Pools'] = {['R1'] = 0x3CD, ['R2'] = 0x3C5, ['R3-1'] = 0x3DE, ['R4'] = 0x3DE, ['R4-2'] = 0x3DE, ['DL-R1'] = 0x3DE},
+	['SAMP_INFO_OFFSET_Pools_Player'] = {['R1'] = 0x18, ['R2'] = 0x8, ['R3-1'] = 0x8, ['R4'] = 0x8, ['R4-2'] = 0x4, ['DL-R1'] = 0x8},
+	['SAMP_SLOCALPLAYERID_OFFSET'] = {['R1'] = 0x4, ['R2'] = 0x0, ['R3-1'] = 0x2F1C, ['R4'] = 0xC, ['R4-2'] = 0x4, ['DL-R1'] = 0x0},
+	['SAMP_PREMOTEPLAYER_OFFSET'] = {['R1'] = 0x2E, ['R2'] = 0x26, ['R3-1'] = 0x4, ['R4'] = 0x2E, ['R4-2'] = 0x1F8A, ['DL-R1'] = 0x26},
+	['SAMP_REMOTEPLAYERDATA_OFFSET'] = {['R1'] = 0x0, ['R2'] = 0xC, ['R3-1'] = 0x0, ['R4'] = 0x10, ['R4-2'] = 0x10, ['DL-R1'] = 0x8},
+	['SAMP_REMOTEPLAYERDATA_ACTOR'] = {['R1'] = 0x0, ['R2'] = 0x1C, ['R3-1'] = 0x0, ['R4'] = 0x1DD, ['R4-2'] = 0x1DD, ['DL-R1'] = 0x4},
+	['GTA_PED_HANDLE'] = {['R1'] = 0x44, ['R2'] = 0x44, ['R3-1'] = 0x44, ['R4'] = 0x44, ['R4-2'] = 0x44, ['DL-R1'] = 0x44},
+	['SAMP_REMOTEPLAYERDATA_HEALTH_OFFSET'] = {['R1'] = 0x1BC, ['R2'] = 0x1BC, ['R3-1'] = 0x1B0, ['R4'] = 0x1B0, ['R4-2'] = 0x1B0, ['DL-R1'] = 0x1B0},
+	['SAMP_REMOTEPLAYERDATA_ARMOR_OFFSET'] = {['R1'] = 0x1B8, ['R2'] = 0x1AC, ['R3-1'] = 0x1AC, ['R4'] = 0x1AC, ['R4-2'] = 0x1AC, ['DL-R1'] = 0x1AC},
+}
+
 function main()
-	repeat wait(0) until memory.read(0xC8D4C0, 4, false) == 9
-	repeat wait(0) until fixed_camera_to_skin()
-
-	samp_v = samp_ver()
-
-	pedpool = memory.getint32(memory.getint32(memory.getint32(samp_handle() + (samp_v == 'R1' and 0x21A0F8 or 0x26E8DC), false) + (samp_v == 'R1' and 0x3CD or 0x3DE), false) + (samp_v == 'R1' and 0x18 or 0x8), false)
+	repeat wait(100) until memory.read(0xC8D4C0, 4, false) == 9
+	currentVersion, sampModule = nil, getModuleHandle("samp.dll")
+	repeat wait(100) until isSampLoadedLua()
+	if currentVersion == 'UNKNOWN' or currentVersion == 'R3' then print('Samp version '.. currentVersion .. ' is not supported'); thisScript():unload() end
+	repeat wait(100) until isSAMPInitilizeLua()
+	repeat wait(100) until fixed_camera_to_skin()
 
     while true do wait(0)
 		local result, ped = getCharPlayerIsTargeting(PLAYER_HANDLE)
@@ -30,32 +44,53 @@ function main()
     end
 end
 
+function isSampLoadedLua()
+    if sampModule <= 0 then return false end
+    if not currentVersion then
+        -- Getting version taken from SAMP-API (thx fyp)
+        local ntheader = sampModule + memory.getint32(sampModule + 0x3C)
+        local ep = memory.getuint32(ntheader + 0x28)
+        currentVersion = entryPoint[ep]
+        if not currentVersion then
+            print(('WARNING: Unknown version of SA-MP (Entry point: 0x%08x)'):format(ep))
+            currentVersion = 'UNKNOWN'
+        end
+    end
+    return true
+end
+
+function isSAMPInitilizeLua()
+	if sampModule <= 0 then return false end
+	if memory.getint32(sampModule + main_offsets.SAMP_INFO_OFFSET[currentVersion]) ~= 0 and currentVersion ~= 'UNKNOWN' then return true end
+    return false
+end
+
+function PedPool()
+	local OFFSET_SampInfo = memory.getint32(sampModule + main_offsets.SAMP_INFO_OFFSET[currentVersion], true)
+	local OFFSET_SampInfo_pPools = memory.getint32(OFFSET_SampInfo + main_offsets.SAMP_INFO_OFFSET_Pools[currentVersion], true)
+	local OFFSET_SampInfo_pPools_Player = memory.getint32(OFFSET_SampInfo_pPools + main_offsets.SAMP_INFO_OFFSET_Pools_Player[currentVersion], true)
+	return OFFSET_SampInfo_pPools_Player
+end
+
+function Local_ID()
+	return memory.getint16(PedPool() + main_offsets.SAMP_SLOCALPLAYERID_OFFSET[currentVersion])
+end
+
 function fixed_camera_to_skin() -- проверка на приклепление камеры к скину
 	local res, i = pcall(memory.getint8, getModuleHandle('gta_sa.exe') + 0x76F053)
 	return (res and (i >= 1 and true or false) or false)
 end
 
-function samp_handle()
-	return getModuleHandle('samp.dll')
-end
-
-function samp_ver()
-	local samp = samp_handle()
-	local entry = samp ~= 0 and memory.getuint32((samp + memory.getint32(samp + 0x3C)) + 0x28)
-	local samp_ver = (entry == 0x31DF13 and 'R1') or (entry == 0xCC4D0 and 'R3') or 'unknown'
-	return samp_ver
-end
-
 function GetHealthAndArmour(id)
 	local fHP, fARM
-	if id ~= memory.getint16(pedpool + (samp_v == 'R1' and 0x4 or 0x2F1C)) then
-		local dwRemoteplayer = memory.getint32(pedpool + (samp_v == 'R1' and 0x2E or 0x4) + id * 4)
-		local dwRemoteplayerData = memory.getuint32(dwRemoteplayer + 0x0)
-		fHP = memory.getfloat(dwRemoteplayerData + (samp_v == 'R1' and 444 or 432))
-		fARM = memory.getfloat(dwRemoteplayerData + (samp_v == 'R1' and 440 or 428))
+	if id ~= Local_ID() then
+		local dwRemoteplayer = memory.getint32(PedPool() + main_offsets.SAMP_PREMOTEPLAYER_OFFSET[currentVersion] + id * 4, true)
+		local dw_remoteplayer_data = memory.getuint32(dwRemoteplayer + main_offsets.SAMP_REMOTEPLAYERDATA_OFFSET[currentVersion], true)
+		fHP = memory.getfloat(dw_remoteplayer_data + main_offsets.SAMP_REMOTEPLAYERDATA_HEALTH_OFFSET[currentVersion], true)
+		fARM = memory.getfloat(dw_remoteplayer_data + main_offsets.SAMP_REMOTEPLAYERDATA_ARMOR_OFFSET[currentVersion], true)
 	else
-		fHP = memory.getfloat(memory.getuint32(0xB6F5F0) + 0x540)
-		fARM = memory.getfloat(memory.getuint32(0xB6F5F0) + 0x548)
+		fHP = memory.getfloat(memory.getuint32(0xB6F5F0) + 0x540, true)
+		fARM = memory.getfloat(memory.getuint32(0xB6F5F0) + 0x548, true)
 	end
 	return fHP, fARM
 end
@@ -63,19 +98,19 @@ end
 function getPedID(handle)
 	local dwRemoteplayer, dw_remoteplayer_data, dw_samp_actor, dw_ped
 	if handle == PLAYER_PED then
-		return memory.getint16(pedpool + (samp_v == 'R1' and 0x4 or 0x2F1C))
+		return Local_ID()
 	end
 	for i = 1, 1004 do
-		dwRemoteplayer = memory.getint32(pedpool + (samp_v == 'R1' and 0x2E or 0x4) + i * 4)
+		dwRemoteplayer = memory.getint32(PedPool() + main_offsets.SAMP_PREMOTEPLAYER_OFFSET[currentVersion] + i * 4, true)
 		if dwRemoteplayer <= 1 then goto continue end
-			dw_remoteplayer_data = memory.getuint32(dwRemoteplayer + 0x0 )
+			dw_remoteplayer_data = memory.getuint32(dwRemoteplayer + main_offsets.SAMP_REMOTEPLAYERDATA_OFFSET[currentVersion], true)
 		::continue::
 		if dw_remoteplayer_data == 0 then goto continue2 end
-			dw_samp_actor = memory.getuint32(dw_remoteplayer_data + 0x0 )
+			dw_samp_actor = memory.getuint32(dw_remoteplayer_data + main_offsets.SAMP_REMOTEPLAYERDATA_ACTOR[currentVersion], true)
 		::continue2::
 		if dw_samp_actor == 0 then goto continue3 end
-			dw_ped = memory.getuint32(dw_samp_actor + 0x2A4 )
-			if getCharPointerHandle(dw_ped) == handle then
+			dw_ped = memory.getuint32(dw_samp_actor + main_offsets.GTA_PED_HANDLE[currentVersion], true)
+			if dw_ped == handle then
 				return true, i
 			end
 		::continue3::
