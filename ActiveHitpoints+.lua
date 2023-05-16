@@ -2,9 +2,10 @@ script_name("ActiveHitpoints+")
 script_author("dmitriyewich")
 script_url("https://vk.com/dmitriyewichmods")
 script_properties('work-in-pause', 'forced-reloading-only')
-script_version("1.5")
+script_version("1.5.1")
 
 local lmemory, memory = pcall(require, 'memory')
+local lffi, ffi = pcall(require, 'ffi')
 
 local entryPoint = {[0x31DF13] = 'R1', [0x3195DD] = 'R2', [0xCC490] = 'R3', [0xCC4D0] = 'R3-1', [0xCBCB0] = 'R4', [0xcbcd0] = 'R4-2', [0xFDB60] = 'DL-R1'}
 local main_offsets = {
@@ -12,13 +13,11 @@ local main_offsets = {
 	['SAMP_INFO_OFFSET_Pools'] = {['R1'] = 0x3CD, ['R2'] = 0x3C5, ['R3-1'] = 0x3DE, ['R4'] = 0x3DE, ['R4-2'] = 0x3DE, ['DL-R1'] = 0x3DE},
 	['SAMP_INFO_OFFSET_Pools_Player'] = {['R1'] = 0x18, ['R2'] = 0x8, ['R3-1'] = 0x8, ['R4'] = 0x8, ['R4-2'] = 0x4, ['DL-R1'] = 0x8},
 	['SAMP_SLOCALPLAYERID_OFFSET'] = {['R1'] = 0x4, ['R2'] = 0x0, ['R3-1'] = 0x2F1C, ['R4'] = 0xC, ['R4-2'] = 0x4, ['DL-R1'] = 0x0},
-	['MAX_PLAYER_ID_STREAMED_ONLY_OFFSET'] = {['R1'] = 0x0, ['R2'] = 0x22, ['R3-1'] = 0x0, ['R4'] = 0x0, ['R4-2'] = 0x2F3A, ['DL-R1'] = 0x22},
 	['SAMP_PREMOTEPLAYER_OFFSET'] = {['R1'] = 0x2E, ['R2'] = 0x26, ['R3-1'] = 0x4, ['R4'] = 0x2E, ['R4-2'] = 0x1F8A, ['DL-R1'] = 0x26},
 	['SAMP_REMOTEPLAYERDATA_OFFSET'] = {['R1'] = 0x0, ['R2'] = 0xC, ['R3-1'] = 0x0, ['R4'] = 0x10, ['R4-2'] = 0x10, ['DL-R1'] = 0x8},
-	['SAMP_REMOTEPLAYERDATA_ACTOR'] = {['R1'] = 0x0, ['R2'] = 0x1C, ['R3-1'] = 0x0, ['R4'] = 0x1DD, ['R4-2'] = 0x1DD, ['DL-R1'] = 0x4},
-	['GTA_PED_HANDLE'] = {['R1'] = 0x44, ['R2'] = 0x44, ['R3-1'] = 0x44, ['R4'] = 0x44, ['R4-2'] = 0x44, ['DL-R1'] = 0x44},
 	['SAMP_REMOTEPLAYERDATA_HEALTH_OFFSET'] = {['R1'] = 0x1BC, ['R2'] = 0x1BC, ['R3-1'] = 0x1B0, ['R4'] = 0x1B0, ['R4-2'] = 0x1B0, ['DL-R1'] = 0x1B0},
 	['SAMP_REMOTEPLAYERDATA_ARMOR_OFFSET'] = {['R1'] = 0x1B8, ['R2'] = 0x1AC, ['R3-1'] = 0x1AC, ['R4'] = 0x1AC, ['R4-2'] = 0x1AC, ['DL-R1'] = 0x1AC},
+	['ID_Find'] = {['R1'] = 0x10420, ['R2'] = 0x104C0, ['R3-1'] = 0x13570, ['R4'] = 0x13890, ['R4-2'] = 0x138C0, ['DL-R1'] = 0x137C0},
 }
 
 function main()
@@ -28,6 +27,9 @@ function main()
 	if currentVersion == 'UNKNOWN' or currentVersion == 'R3' then print('Samp version '.. currentVersion .. ' is not supported'); thisScript():unload() end
 	repeat wait(100) until isSAMPInitilizeLua()
 	repeat wait(100) until fixed_camera_to_skin()
+	
+	ID_Find = ffi.cast("int (__thiscall *)(intptr_t, intptr_t)", sampModule + main_offsets.ID_Find[currentVersion])
+	
     while true do wait(0)
 		local result, ped = getCharPlayerIsTargeting(PLAYER_HANDLE)
 		if result then
@@ -95,24 +97,9 @@ function GetHealthAndArmour(id)
 end
 
 function getPedID(handle)
-	local REMOTE_PLAYER, PLAYER_DATA, SAMP_ACTOR, GTA_PED_HANDLE
 	if handle == PLAYER_PED then return true, Local_ID() end
-	local MAX_PLAYER_ID = memory.getint32(PedPool() + main_offsets.MAX_PLAYER_ID_STREAMED_ONLY_OFFSET[currentVersion], true)
-	for i = 1, MAX_PLAYER_ID do
-		REMOTE_PLAYER = memory.getint32(PedPool() + main_offsets.SAMP_PREMOTEPLAYER_OFFSET[currentVersion] + i * 4, true)
-		if REMOTE_PLAYER > 0 then
-			PLAYER_DATA = memory.getuint32(REMOTE_PLAYER + main_offsets.SAMP_REMOTEPLAYERDATA_OFFSET[currentVersion], true)
-			if PLAYER_DATA > 0 then
-				SAMP_ACTOR = memory.getuint32(PLAYER_DATA + main_offsets.SAMP_REMOTEPLAYERDATA_ACTOR[currentVersion], true)
-				if SAMP_ACTOR > 0 then
-					GTA_PED_HANDLE = memory.getuint32(SAMP_ACTOR + main_offsets.GTA_PED_HANDLE[currentVersion], true)
-					if GTA_PED_HANDLE == handle then
-						return true, i
-					end
-				end
-			end
-		end
-	end
+	local id = ID_Find(PedPool(), getCharPointer(handle))
+	if id ~= 65535 then return true, id end
 	return false, -1
 end
 
