@@ -4,7 +4,7 @@ script_description("Displaying information about visible models.")
 script_url("https://vk.com/dmitriyewichmods")
 script_dependencies("ffi", "memory", "hooks", "vkeys")
 script_properties('work-in-pause', 'forced-reloading-only')
-script_version("1.0.0")
+script_version("1.0.1")
 
 local memory = require("memory")
 local ffi = require("ffi")
@@ -205,7 +205,7 @@ function json(filePath) -- by chapo
     if not doesDirectoryExist(getWorkingDirectory()..'\\') then
         createDirectory(getWorkingDirectory()..'\\')
     end
-   
+
     function class:Save(tbl)
         if tbl then
             local F = io.open(filePath, 'w')
@@ -231,7 +231,7 @@ function json(filePath) -- by chapo
 end
 
 function onWindowMessage(msg, wparam, lparam)
-	if bit.band(lparam, 0x40000000) == 0  then
+	if bit.band(lparam, 0x40000000) == 0 then
 		if msg == wm.WM_KEYDOWN or msg == wm.WM_SYSKEYDOWN then
 			if wparam == vkeys.VK_F3 then
 				local active1, active2, active3 = thread_chars:status(), thread_obj:status(), thread_veh:status()
@@ -290,9 +290,7 @@ function LoadTimeObject_hook(loadstr)
 	return LoadTimeObject_hook(loadstr)
 end
 
-
 loadPedObject_hook = hook.jmp.new("int(__cdecl*)(const char*)", loadPedObject_hook, 0x5B7420)
-
 LoadVehicleObject_hook = hook.jmp.new("int(__cdecl*)(const char*)", LoadVehicleObject_hook, 0x5B6F30)
 
 LoadObject_hook = hook.jmp.new("int(__cdecl*)(const char*)", LoadObject_hook, 0x5B3C60)
@@ -304,21 +302,21 @@ LoadWeaponObject_hook = hook.jmp.new("int(__cdecl*)(const char*)", LoadWeaponObj
 local font = renderCreateFont("Arial", 8, 0x5)
 
 local getBonePosition = ffi.cast("int(__thiscall*)(void*, float*, int, bool)", 0x5E4280)
-
 function GetBodyPartCoordinates(id, handle)
-	local pedptr = getCharPointer(handle)
-	local vec = ffi.new("float[3]")
+	local pedptr, vec = getCharPointer(handle), ffi.new("float[3]")
 	getBonePosition(ffi.cast("void*", pedptr), vec, id, true)
 	return vec[0], vec[1], vec[2]
 end
 
 function main()
 	repeat wait(100) until memory.getuint32(0xC8D4C0, true) == 9
-	repeat wait(0) until fixed_camera_to_skin()
-
+	repeat wait(100) until fixed_camera_to_skin()
 	if models_table[1] ~= nil then
 		local status, code = json('ViewModelsInfo.json'):Save(models_table)
+		wait(1000)
+		models_table = json('ViewModelsInfo.json'):Load(models_table)
 	else
+		wait(1000)
 		models_table = json('ViewModelsInfo.json'):Load(models_table)
 	end
 
@@ -331,9 +329,12 @@ function main()
 					local res, positionX, positionY, positionZ = getObjectCoordinates(tbl_Obj[i])
 					if res and models_table[tostring(model)] ~= nil then
 						local cx, cy = convert3DCoordsToScreen(positionX, positionY, positionZ)
-						renderFontDrawText(font,
+						if drawClickableText(font,
 							("Model ID: %d\nModel name: %s\nTxd name: %s"):format(model, models_table[tostring(model)].name, models_table[tostring(model)].txd),
-							cx, cy,0xFFFFFFFF)
+							cx, cy,0xFFFFFFFF, 0xAAAAAAAA)
+						then
+							setClipboardText(("Model ID: %d\nModel name: %s\nTxd name: %s"):format(model, models_table[tostring(model)].name, models_table[tostring(model)].txd))
+						end
 					end
 				end
 			end
@@ -348,9 +349,12 @@ function main()
 					local model = getCarModel(tbl_Veh[i])
 					local cx, cy = convert3DCoordsToScreen(getCarCoordinates(tbl_Veh[i]))
 					if models_table[tostring(model)] ~= nil then
-						renderFontDrawText(font,
+						if drawClickableText(font,
 							("Model ID: %d\nModel name: %s\nTxd name: %s\nType: %s\nName: %s"):format(model, models_table[tostring(model)].name, models_table[tostring(model)].txd, models_table[tostring(model)].type_model, models_table[tostring(model)].name_car),
-							cx, cy,	0xFFFFFFFF)
+							cx, cy,0xFFFFFFFF, 0xAAAAAAAA)
+						then
+							setClipboardText(("Model ID: %d\nModel name: %s\nTxd name: %s\nType: %s\nName: %s"):format(model, models_table[tostring(model)].name, models_table[tostring(model)].txd, models_table[tostring(model)].type_model, models_table[tostring(model)].name_car))
+						end
 					end
 				end
 			end
@@ -365,14 +369,32 @@ function main()
 					local model = getCharModel(tbl_Cha[i])
 					local cx, cy = convert3DCoordsToScreen(GetBodyPartCoordinates(4, tbl_Cha[i]))
 					if models_table[tostring(model)] ~= nil then
-						renderFontDrawText(font,
+						if drawClickableText(font,
 							("Model ID: %d\nModel name: %s\nTxd name: %s"):format(model, models_table[tostring(model)].name, models_table[tostring(model)].txd),
-							cx, cy,0xFFFFFFFF)
+							cx, cy,0xFFFFFFFF, 0xAAAAAAAA)
+						then
+							setClipboardText(("Model ID: %d\nModel name: %s\nTxd name: %s"):format(model, models_table[tostring(model)].name, models_table[tostring(model)].txd))
+						end
 					end
 				end
 			end
 		end
 	end)
+	wait(-1)
+end
+
+function drawClickableText(font, text, posX, posY, color, colorA) -- by hnnssy
+   renderFontDrawText(font, text, posX, posY, color)
+   local textLenght = renderGetFontDrawTextLength(font, text)
+   local textHeight = renderGetFontDrawHeight(font)
+   local curX, curY = getCursorPos()
+
+   if curX >= posX and curX <= posX + textLenght and curY >= posY and curY <= posY + textHeight then
+     renderFontDrawText(font, text, posX, posY, colorA)
+     if wasKeyPressed(1) then
+       return true
+     end
+   end
 end
 
 function onScriptTerminate(sc, qg)
