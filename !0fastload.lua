@@ -1,6 +1,5 @@
-script_properties('work-in-pause', 'forced-reloading-only')
 -- thx gennariarmando and LINK/2012 and KepchiK
-local lmemory, memory = pcall(require, 'memory')
+local memory = require 'memory'
 if memory.getuint32(0xC8D4C0, true) < 9 then
 	memory.fill(0x747483, 0x90, 6, true) -- Initialize game state US 1.0
 	memory.setuint32(0xC8D4C0, 5, true)
