@@ -126,51 +126,14 @@ function getHealth(id)
 end
 
 function getPedID(handle)
-    local REMOTE_PLAYER, PLAYER_DATA, SAMP_ACTOR, GTA_PED_HANDLE
-
-    if handle == PLAYER_PED then
-        return true, getLocalID()
-    end
-
-    local pedPool = getPedPool()
-    local MAX_PLAYER_ID = memory.getint32(
-        pedPool + main_offsets.MAX_PLAYER_ID_STREAMED_ONLY_OFFSET[currentVersion],
-        true
-    )
-
-    for i = 0, MAX_PLAYER_ID do
-        REMOTE_PLAYER = memory.getuint32(
-            pedPool + main_offsets.SAMP_PREMOTEPLAYER_OFFSET[currentVersion] + i * 4,
-            true
-        )
-
-        if REMOTE_PLAYER > 0 then
-            PLAYER_DATA = memory.getuint32(
-                REMOTE_PLAYER + main_offsets.SAMP_REMOTEPLAYERDATA_OFFSET[currentVersion],
-                true
-            )
-
-            if PLAYER_DATA > 0 then
-                SAMP_ACTOR = memory.getuint32(
-                    PLAYER_DATA + main_offsets.SAMP_REMOTEPLAYERDATA_ACTOR[currentVersion],
-                    true
-                )
-
-                if SAMP_ACTOR > 0 then
-                    GTA_PED_HANDLE = memory.getuint32(
-                        SAMP_ACTOR + main_offsets.GTA_PED_HANDLE[currentVersion],
-                        true
-                    )
-
-                    if GTA_PED_HANDLE > 0 and GTA_PED_HANDLE == handle then
-                        return true, i
-                    end
-                end
-            end
-        end
-    end
-
-    return false, -1
+	if handle == PLAYER_PED then
+		return true, getLocalID()
+	end
+	local id = ID_Find(getPedPool(), getCharPointer(handle))
+	if id ~= 65535 then
+		return true, id
+	end
+	return false, -1
 end
 
 function lerpColor(t, fromR, fromG, fromB, toR, toG, toB)
